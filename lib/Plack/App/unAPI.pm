@@ -48,7 +48,25 @@ sub call {
         return $res;
     }
 
-    $app->( $env ); # we don't check response type and code by now
+    my $res = eval { $app->( $env ); };
+    my $error = $@;
+
+    if ( $error ) {
+        $error = "Internal crash with format=$format and id=$id: $@";
+    } elsif (!(
+        # check whether PSGI conforms to PSGI specification
+        ref($res) and ref($res) eq 'ARRAY' and 
+        (@$res == 3 or @$res == 2) and
+        $res->[0] =~ /^\d+$/ and $res->[0] >= 100 and
+        ref $res->[1] and $res->[1] eq 'ARRAY'
+    )) {
+        $error = "No PSGI response for format=$format and id=$id";
+    }
+    # we may also check response type...
+
+    return [ 500, [ 'Content-Type' => 'text/plain' ], [ $error ] ] if $error;
+ 
+    $res;
 }
 
 sub formats {
@@ -90,9 +108,10 @@ sub _xmlescape {
 This implements an unAPI server as PSGI application. unAPI is a tiny HTTP API
 to query discretely identified objects in different formats. See
 L<http://unapi.info> for details. The basic idea is to have two HTTP GET query
-parameters: B<id> to select an object and B<format> to select a format. If no
+parameters: B<id> to select an object, and B<format> to select a format. If no
 (or no supported) format is specified, a list of formats (in XML) is returned
-instead.
+instead. This implementation routes the request to different PSGI applications
+based on a known format parameter, or sends the format list.
 
 =head1 SYNOPSIS
 
@@ -135,6 +154,10 @@ An URL of a document that describes the format
 
 =back 
 
+By default, the result is checked to be valid PSGI (at least to some degree)
+and errors in single applications are catched - in this case a response with
+HTTP status code 500 is returned.
+
 =method unAPI ( %formats )
 
 The C<unAPI> keyword as constructor alias is exported by default. To prevent
@@ -144,5 +167,10 @@ exporting, include this module via C<use Plack::App::unAPI ();>.
 
 Returns a PSGI response with status 300 (Multiple Choices) and an XML document
 that lists all formats.
+
+=head1 SEE ALSO
+
+Chudnov et al. (2006): I<Introducing unAP>. In: Ariadne, 48,
+<http://www.ariadne.ac.uk/issue48/chudnov-et-al/>.
 
 =cut

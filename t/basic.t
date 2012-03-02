@@ -6,7 +6,9 @@ use HTTP::Request::Common;
 use Plack::App::unAPI;
 use Plack::Request;
 
-my $app1 = sub { [ 404, [ 'Content-Type' => 'application/xml' ], [ '<xml/>' ] ] };
+my $app1 = sub { 
+    [ 404, [ 'Content-Type' => 'application/xml' ], [ '<xml/>' ] ] 
+};
 
 {
     package MyApp;
