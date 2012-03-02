@@ -89,7 +89,10 @@ sub _xmlescape {
 
 This implements an unAPI server as PSGI application. unAPI is a tiny HTTP API
 to query discretely identified objects in different formats. See
-L<http://unapi.info> for details.
+L<http://unapi.info> for details. The basic idea is to have two HTTP GET query
+parameters: B<id> to select an object and B<format> to select a format. If no
+(or no supported) format is specified, a list of formats (in XML) is returned
+instead.
 
 =head1 SYNOPSIS
 
@@ -104,11 +107,18 @@ L<http://unapi.info> for details.
         xml  => [ $app2 => 'application/xml' ],
         txt  => [ $app3 => 'text/plain', docs => 'http://example.com' ];
 
-To run this script you can simply call C<plackup yourscript.psgi>.
+To run this script you can simply call C<plackup yourscript.psgi>. Then try:
+
+    http://localhost:5000/?id=abc&format=json  # calls $app1
+    http://localhost:5000/?id=abc&format=xml   # calls $app2
+    http://localhost:5000/?id=abc&format=txt   # calls $app3
+    http://localhost:5000/                     # returns list of formats
+    http://localhost:5000/?format=xml          # returns list of formats
+    http://localhost:5000/?id=abc              # returns list of formats
 
 =method new ( %formats )
 
-To create an new object you must provide a list of mappings between format
+To create a server object you must provide a list of mappings between format
 names and PSGI applications to serve requests for the particular format. Each
 application is wrapped in an array reference, followed by its MIME type and
 optional information fields about the format. So the general form is: 
