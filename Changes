@@ -1,7 +1,8 @@
 # Change file for Plack::App::unAPI
 
-0.2 2012-03-??
+0.2 2012-03-05
     Catch internal errors
+    Added utility function `wrAPI`
 
 0.1 2012-03-02
     Initial release at CPAN
