@@ -1,5 +1,8 @@
 # Change file for Plack::App::unAPI
 
+0.3 2012-03-07
+    New option 'always' and variants for HTTP::Negotiate
+
 0.2 2012-03-05
     Catch internal errors
     Added utility function `wrAPI`

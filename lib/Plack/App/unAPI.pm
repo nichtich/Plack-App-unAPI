@@ -37,7 +37,7 @@ sub call {
     my $format = $req->param('format') // '';
     my $id     = $req->param('id') // '';
 
-    # here we could first lookup the resource at the server
+    # TODO: here we could first lookup the resource at the server
     # and sent 404 if no known format was specified
 
     if ($format eq '' or $format eq '_') {
@@ -99,6 +99,23 @@ sub formats {
     push @xml, '</formats>';
 
     return [ $status, [ 'Content-Type' => $type ], [ join "\n", @xml] ];
+}
+
+sub variants {
+    my ($self) = @_;
+
+    my $vars = [ ];
+
+    while (my ($name, $format) = each %$self) {
+        next if $name eq '_';
+        my $qs = $format->{qs} // $self->{_}->{qs} // 1;
+        my $encoding = $format->{encoding} // $self->{_}->{encoding};
+        my $charset = $format->{charset} // $self->{_}->{charset};
+        my $lang = $format->{lang} // $self->{_}->{lang};
+        push @$vars, [ $name, $qs, $format->{type}, $encoding, $charset, $lang, 0 ];
+    }
+
+    return $vars;
 }
 
 sub wrAPI {
@@ -211,6 +228,24 @@ If set to a true value, the application is used also if no id parameters has
 been supplied. Set to false by default, so a format list with HTTP status 
 code 300 is returned unless both, format and id have been supplied.
 
+=item qs
+
+A number between 0.000 and 1.000 that describes the "source quality" for
+content negotiation. The default value is 1.
+
+=item encoding
+
+One or more content encodings, for content negotiation. Typical values are
+C<gzip> or C<compress>.
+
+=item charset
+
+The charset for content negotiation (C<undef> by default).
+
+=item language
+
+One or more languages for content negotiation (C<undef> by default).
+
 =back 
 
 General options for all formats can be passed with the C<_> field (no format
@@ -238,6 +273,19 @@ characters) that has MIME type C<$type>.
 Returns a PSGI response with status 300 (Multiple Choices) and an XML document
 that lists all formats. The optional header argument has default value
 C<< <?xml version="1.0" encoding="UTF-8"?> >>. 
+
+=method variants
+
+Returns a list of content variants to be used in L<HTTP::Negotiate>. The return
+value is an array reference of array references, each with seven elements:
+format name, source quality (qs), type, encoding, charset, language, and size.
+The return value for the example given above would be:
+
+    [
+        ['json','1','application/javascript',undef,undef,undef,0],
+        ['xml','1','application/xml',undef,undef,undef,0],
+        ['txt','1','text/plain',undef,undef,undef,0]
+    ]
 
 =head1 SEE ALSO
 

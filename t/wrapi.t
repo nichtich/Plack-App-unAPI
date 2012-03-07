@@ -43,6 +43,10 @@ test_psgi $app, sub {
     is( $res->code, 404, 'always on: 404');
     is( $res->content, 'not found' );
 
+    $res = $cb->(GET "/?format=txt&id=");
+    is( $res->code, 404, 'always on: 404');
+    is( $res->content, 'not found' );
+
     $res = $cb->(GET "/?format=foo");
     is( $res->code, 300, 'always off: 300');
     like( $res->content, qr{<formats}m, 'format list' );

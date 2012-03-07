@@ -32,7 +32,7 @@ my @xml = (
 
 my $app = unAPI(
     xml  => [ $app1 => 'application/xml' ],
-    txt  => [ $app2 => 'text/plain', docs => 'http://example.com' ]
+    txt  => [ $app2 => 'text/plain', docs => 'http://example.com', qs => 0.3 ]
 );
 
 test_psgi $app, sub {
@@ -65,5 +65,11 @@ test_psgi $app, sub {
     is( $res->code, 200, 'Found (via format=txt)' );
     is( $res->content, "ID: abc", "format=txt" );
 };
+
+is_deeply( $app->variants, [
+        ['xml','1','application/xml',undef,undef,undef,0],
+        ['txt','0.3','text/plain',undef,undef,undef,0]
+    ], 'variants'
+);
 
 done_testing;
