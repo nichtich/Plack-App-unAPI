@@ -12,7 +12,7 @@ sub lookup_object {
 }
 
 my $app1 = sub { 
-    my $id = Plack::Request->new(shift)->param('id');
+    my $id = Plack::Request->new(shift)->param('id') // '';
 
     my $obj = lookup_object( $id ); # look up object
 
@@ -22,7 +22,7 @@ my $app1 = sub {
 };
 
 my $app = unAPI(
-    txt => [ $app1 => 'text/plain' ],
+    txt => [ $app1 => 'text/plain', always => 1 ],
     foo => wrAPI( \&lookup_object => 'foo/bar' ),
 );
 
@@ -38,6 +38,14 @@ test_psgi $app, sub {
         is( $res->code, 200, "found with format=$format" );
         is( $res->content, "found a:b" );
     }
+
+    $res = $cb->(GET "/?format=txt");
+    is( $res->code, 404, 'always on: 404');
+    is( $res->content, 'not found' );
+
+    $res = $cb->(GET "/?format=foo");
+    is( $res->code, 300, 'always off: 300');
+    like( $res->content, qr{<formats}m, 'format list' );
 };
 
 done_testing;

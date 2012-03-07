@@ -40,7 +40,7 @@ sub call {
     # here we could first lookup the resource at the server
     # and sent 404 if no known format was specified
 
-    if ($format eq '' or $format eq '_' or $id eq '') {
+    if ($format eq '' or $format eq '_') {
         return $self->formats($id);
     }
 
@@ -48,6 +48,11 @@ sub call {
         my $res = $self->formats($id);
         $res->[0] = 406; # Not Acceptable
         return $res;
+    }
+
+    my $always = $self->{$format}->{always} // $self->{_}->{always};
+    if ($id eq '' and not $always ) {
+        return $self->formats('');
     }
 
     my $res = eval { $self->{$format}->{app}->( $env ); };
@@ -100,7 +105,7 @@ sub wrAPI {
     my ($code, $type, %about) = @_;
 
     my $app = sub {
-        my $id = Plack::Request->new(shift)->param('id');
+        my $id = Plack::Request->new(shift)->param('id') // '';
 
         my $obj = $code->( $id ); # look up object
 
@@ -167,7 +172,7 @@ starting with the following boilerplate:
     use Plack::Request;
     
     my $app1 = sub { 
-        my $id = Plack::Request->new(shift)->param('id');
+        my $id = Plack::Request->new(shift)->param('id') // '';
 
         my $obj = lookup_object( $id ); # look up object
 
@@ -199,6 +204,12 @@ The following information fields are supported:
 =item docs
 
 An URL of a document that describes the format
+
+=item always
+
+If set to a true value, the application is used also if no id parameters has
+been supplied. Set to false by default, so a format list with HTTP status 
+code 300 is returned unless both, format and id have been supplied.
 
 =back 
 
