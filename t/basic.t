@@ -50,12 +50,14 @@ test_psgi $app, sub {
         );
     }
 
-    $res = $cb->(GET "/?id=abc");
-    is( $res->code, 300, 'Multiple Choices' );
-    is_deeply(
-        [sort (split "\n", $res->content)],
-        [sort ('<formats id="abc">',@xml)], 'list formats with id'
-    );
+    foreach my $q (qw(id=abc id=abc&format= id=abc&format=_)) {
+        $res = $cb->(GET "/?$q");
+        is( $res->code, 300, 'Multiple Choices' );
+        is_deeply(
+            [sort (split "\n", $res->content)],
+            [sort ('<formats id="abc">',@xml)], 'list formats with id'
+        );
+    }
 
     $res = $cb->(GET "/?id=0&format=xml");
     is( $res->code, 404, 'Not found (via format=xml)' );
