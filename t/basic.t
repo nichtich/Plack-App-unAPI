@@ -32,7 +32,7 @@ my @xml = (
 
 my $app = unAPI(
     xml  => [ $app1 => 'application/xml' ],
-    txt  => [ $app2 => 'text/plain', docs => 'http://example.com', qs => 0.3 ]
+    txt  => [ $app2 => 'text/plain', docs => 'http://example.com', quality => 0.3 ]
 );
 
 test_psgi $app, sub {

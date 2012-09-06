@@ -4,34 +4,42 @@ package Plack::App::unAPI;
 #ABSTRACT: Serve via unAPI
 use v5.10.1;
 
-use parent qw(Plack::Component Exporter);
+use parent qw(Plack::Middleware::Negotiate Exporter);
+
 use Plack::Request;
 use Carp qw(croak);
 
 our @EXPORT = qw(unAPI wrAPI);
 
 use Log::Contextual::WarnLogger;
-use Log::Contextual qw(:log :Dlog), -default_logger 
-	=> Log::Contextual::WarnLogger->new({ env_prefix => 'PLACK_APP_UNAPI' });
+use Log::Contextual qw(:log :Dlog), -default_logger
+    => Log::Contextual::WarnLogger->new({ env_prefix => 'PLACK_APP_UNAPI' });
 
 ## no critic
 sub unAPI(@) { __PACKAGE__->new(@_) }
 ## use critic
 
 sub new {
-    my $class = shift;
-    my $self  = bless {@_}, ref $class || $class;
+    my ($class, %formats) = @_;
 
-    $self->{'_'} //= { }; # default options
+    my $self = bless {
+        formats => { },
+        apps    => { },
+    }, ref $class || $class;
 
-    foreach (grep { $_ ne '_' } keys %$self) {
-        my ($app, $type, %about) = @{$self->{$_}};
+    foreach my $name (grep { $_ ne '_' } keys %formats) {
+        my ($app, $type, %about) = @{$formats{$name}};
         croak "unAPI format required MIME type" unless $type;
-        $self->{$_} = { app => $app, type => $type, %about };
+
+        $self->{apps}->{$name} = $app;
+        $self->{formats}->{$name} = { type => $type, %about };
 
         log_trace { "Initialized Plack::App::unAPI with format=$_ for $type" };
     }
 
+    $self->{formats}->{_} = $formats{_};
+
+    $self->prepare_app;
     $self;
 }
 
@@ -47,20 +55,20 @@ sub call {
     return $self->formats($id)
         if $format ~~ ['','_'];
 
-    my $route = $self->{$format};
-    if ( !$route || !$route->{app} ) {
+    my $route = $self->{formats}->{$format};
+    if ( !$route || !$self->{apps}->{$format} ) {
         my $res = $self->formats($id);
         $res->[0] = 406; # Not Acceptable
         return $res;
     }
 
     return $self->formats('')
-        if $id eq '' and !($route->{always} // $self->{_}->{always});
+        if $id eq '' and !($route->{always} // $self->{formats}->{_}->{always});
 
     log_trace { "Valid unAPI request with format=$format id=$id" };
 
     my $res = eval {
-        $route->{app}->( $env );
+        $self->{apps}->{$format}->( $env );
     };
     my $error = $@;
 
@@ -98,7 +106,7 @@ sub formats {
     push @xml, $id eq '' ?  '<formats>'
                          : "<formats id=\"" . _xmlescape($id) . "\">";
 
-    while (my ($name, $format) = each %$self) {
+    while (my ($name, $format) = each %{$self->{formats}}) {
         next if $name eq '_';
         my $line = "<format name=\"$name\" type=\"".$format->{type}."\"";
         if ( $format->{docs} ) {
@@ -111,22 +119,6 @@ sub formats {
     push @xml, '</formats>';
 
     return [ $status, [ 'Content-Type' => $type ], [ join "\n", @xml] ];
-}
-
-sub variants {
-    my $self = shift;
-    return [ 
-        map { [ 
-                $_, 
-                $self->{$_}->{qs} // $self->{_}->{qs} // 1,
-                $self->{$_}->{type}, 
-                $self->{$_}->{encoding} // $self->{_}->{encoding},
-                $self->{$_}->{charset} // $self->{_}->{charset},
-                $self->{$_}->{lang} // $self->{_}->{lang},
-                0 
-        ] } 
-        grep { $_ ne '_' } keys %$self
-    ];
 }
 
 sub wrAPI {
@@ -267,7 +259,7 @@ By default, the format list with HTTP status code 300 is returned if unless
 both, format and id have been supplied. If 'always' is set to true, an empty
 identifier will also be routed to the format's application.
 
-=item qs
+=item quality
 
 A number between 0.000 and 1.000 that describes the "source quality" for
 content negotiation. The default value is 1.
@@ -334,6 +326,10 @@ C<< $ENV{PLACK_APP_UNAPI_TRACE} = 1 >>.
 =head1 SEE ALSO
 
 =over
+
+=item
+
+L<Plack::Middleware::Negotiate>
 
 =item
 
