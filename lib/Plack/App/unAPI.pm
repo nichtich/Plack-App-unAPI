@@ -4,7 +4,7 @@ package Plack::App::unAPI;
 #ABSTRACT: Serve via unAPI
 use v5.10.1;
 
-use parent qw(Plack::Middleware::Negotiate Exporter);
+use base qw(Exporter Plack::Middleware::Negotiate);
 
 use Plack::Request;
 use Carp qw(croak);
@@ -154,7 +154,7 @@ sub _xmlescape {
 
 =head1 SYNOPSIS
 
-Create <app.psgi> like this:
+Create C<app.psgi> like this:
 
     use Plack::App::unAPI;
 
