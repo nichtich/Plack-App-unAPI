@@ -11,10 +11,6 @@ use Carp qw(croak);
 
 our @EXPORT = qw(unAPI wrAPI);
 
-use Log::Contextual::WarnLogger;
-use Log::Contextual qw(:log :Dlog), -default_logger
-    => Log::Contextual::WarnLogger->new({ env_prefix => 'PLACK_APP_UNAPI' });
-
 ## no critic
 sub unAPI(@) { __PACKAGE__->new(@_) }
 ## use critic
@@ -33,8 +29,6 @@ sub new {
 
         $self->{apps}->{$name} = $app;
         $self->{formats}->{$name} = { type => $type, %about };
-
-        log_trace { "Initialized Plack::App::unAPI with format=$_ for $type" };
     }
 
     $self->{formats}->{_} = $formats{_};
@@ -65,8 +59,6 @@ sub call {
     return $self->formats('')
         if $id eq '' and !($route->{always} // $self->{formats}->{_}->{always});
 
-    log_trace { "Valid unAPI request with format=$format id=$id" };
-
     my $res = eval {
         $self->{apps}->{$format}->( $env );
     };
@@ -80,7 +72,6 @@ sub call {
     }
 
     if ($error) { # TODO: catch only on request
-        log_warn { $error };
         return [ 500, [ 'Content-Type' => 'text/plain' ], [ $error ] ];
     }
 
@@ -317,11 +308,6 @@ The return value for the example given above would be:
         ['xml','1','application/xml',undef,undef,undef,0],
         ['txt','1','text/plain',undef,undef,undef,0]
     ]
-
-=head1 LOGGING AND DEBUGGING
-
-Plack::App::unAPI uses L<Log::Contextual>. To get detailed logging messages set
-C<< $ENV{PLACK_APP_UNAPI_TRACE} = 1 >>.
 
 =head1 SEE ALSO
 

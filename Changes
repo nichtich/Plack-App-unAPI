@@ -1,5 +1,8 @@
 # Change file for Plack::App::unAPI
 
+0.4 2013-03-26
+    Removed logging
+
 0.31 2012-09-06
 	Internally use Plack::Middleware::Negotiate
 
