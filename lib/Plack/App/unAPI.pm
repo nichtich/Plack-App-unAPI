@@ -47,7 +47,7 @@ sub call {
     # and sent 404 if no known format was specified
 
     return $self->formats($id)
-        if $format ~~ ['','_'];
+        if $format eq '' or $format eq '_';
 
     my $route = $self->{formats}->{$format};
     if ( !$route || !$self->{apps}->{$format} ) {
