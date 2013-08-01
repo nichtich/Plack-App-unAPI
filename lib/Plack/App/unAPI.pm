@@ -301,12 +301,13 @@ C<< <?xml version="1.0" encoding="UTF-8"?> >>.
 Returns a list of content variants to be used in L<HTTP::Negotiate>. The return
 value is an array reference of array references, each with seven elements:
 format name, source quality (qs), type, encoding, charset, language, and size.
-The return value for the example given above would be:
+The list is sorted by format name.  The return value for the example given
+above would be:
 
     [
         ['json','1','application/json',undef,undef,undef,0],
-        ['xml','1','application/xml',undef,undef,undef,0],
-        ['txt','1','text/plain',undef,undef,undef,0]
+        ['txt','1','text/plain',undef,undef,undef,0],
+        ['xml','1','application/xml',undef,undef,undef,0]
     ]
 
 =head1 SEE ALSO

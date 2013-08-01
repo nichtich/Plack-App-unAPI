@@ -1,6 +1,6 @@
 # Change file for Plack::App::unAPI
 
-0.5 2013-??-??
+0.41 2013-08-01
     Removed smartmatch operator for perl >= 5.18
 
 0.4 2013-03-26
