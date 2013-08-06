@@ -69,8 +69,8 @@ test_psgi $app, sub {
 };
 
 is_deeply( $app->variants, [
+        ['txt','0.3','text/plain',undef,undef,undef,0],
         ['xml','1','application/xml',undef,undef,undef,0],
-        ['txt','0.3','text/plain',undef,undef,undef,0]
     ], 'variants'
 );
 

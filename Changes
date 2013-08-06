@@ -1,5 +1,8 @@
 # Change file for Plack::App::unAPI
 
+0.42 2013-08-06
+    Fixed test failure introduced by Plack::Middleware::Negotiate
+
 0.41 2013-08-01
     Removed smartmatch operator for perl >= 5.18
 
