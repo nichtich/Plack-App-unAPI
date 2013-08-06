@@ -4,9 +4,18 @@ use v5.10;
 use Test::More;
 use Plack::Test;
 use HTTP::Request::Common;
+use Plack::App::unAPI;
+
+my $app = Plack::App::unAPI->new;
+
+test_psgi $app, sub {
+    my $res = (shift)->(GET '/');
+    is $res->code, 300, "Multiple Choices";
+    like $res->content, qr{<formats>\s*</formats>}, 'empty list of formats';
+};
 
 {
-    package unAPIServerTest;
+    package unAPIServerTest1;
 
     use parent 'Plack::App::unAPI';
 
@@ -16,6 +25,12 @@ use HTTP::Request::Common;
             json => [ 'application/json' ], 
         }
     }
+}
+
+{
+    package unAPIServerTest2;
+
+    our @ISA = qw(unAPIServerTest1);
 
     sub format_json {
         return $_[1] eq 'bar' ? '{"x":1}' : undef; 
@@ -26,8 +41,13 @@ use HTTP::Request::Common;
     }
 }
 
+eval {
+    $app = unAPIServerTest1->new;
+    $app->prepare_app;
+};
+ok $@, 'formats must be implemented';
 
-my $app = unAPIServerTest->new;
+$app = unAPIServerTest2->new;
 
 test_psgi $app, sub {
     my $cb = shift;
