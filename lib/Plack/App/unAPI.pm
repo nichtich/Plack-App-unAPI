@@ -6,9 +6,12 @@ use v5.10.1;
 
 use Plack::App::unAPI::Impl;
 use Plack::Request;
+use Carp;
 
-use parent 'Exporter';
+use parent ('Plack::Component', 'Exporter');
 our @EXPORT = qw(unAPI wrAPI);
+
+use Plack::Util::Accessor qw(impl);
 
 ## no critic
 sub unAPI(@) { 
@@ -34,6 +37,35 @@ sub wrAPI {
     return [ $app => $type, %about ];
 }
 
+sub prepare_app {
+    my $self = shift;
+
+    my $format_spec = $self->formats;
+    my %format_impl;
+
+    foreach my $format (keys %$format_spec) {
+        my $method = "format_$format";
+        if (!$self->can($method)) {
+            croak __PACKAGE__." must implement method $method"; 
+        }
+        $format_impl{$format} = wrAPI(
+            sub { $self->$method(shift); } => @{$format_spec->{$format}}
+        );
+    }
+
+    $self->impl( Plack::App::unAPI::Impl->new( %format_impl ) );
+}
+
+sub call {
+    my $self = shift;
+    $self->impl->call(shift);
+}
+
+# to be implemented in subclass
+sub formats {
+    return { }
+}
+
 1;
 
 =head1 SYNOPSIS
@@ -49,7 +81,7 @@ Create C<app.psgi> like this:
     unAPI
         json => wrAPI( $get_json => 'application/json' ),
         xml  => wrAPI( $get_xml  => 'application/xml' ),
-        txt  => wrAPI( $get_txt  => 'text/plain' );
+        txt  => wrAPI( $get_txt  => 'text/plain', docs => 'http://example.com' );
 
 The function C<wrAPI> facilitates definition of PSGI apps that serve resources
 in one format, based on HTTP query parameter C<id>. One can also use custom
@@ -66,19 +98,22 @@ PSGI apps:
         xml  => [ $app2 => 'application/xml' ],
         txt  => [ $app3 => 'text/plain', docs => 'http://example.com' ];
 
-Run for instance by calling C<plackup app.psgi> and retrieve:
+One can also implement the unAPI Server as subclass of Plack::App::unAPI:
 
-    http://localhost:5000/?id=abc&format=json  # calls $app1->($env);
-    http://localhost:5000/?id=abc&format=xml   # calls $app2->($env);
-    http://localhost:5000/?id=abc&format=txt   # calls $app3->($env);
-    http://localhost:5000/                     # returns list of formats
-    http://localhost:5000/?format=xml          # returns list of formats
-    http://localhost:5000/?id=abc              # returns list of formats
+    package MyUnAPIServer;
+    use parent 'Plack::App::unAPI';
 
+    sub format_json { my $id = shift; ...; return $json; }
+    sub format_xml  { my $id = shift; ...; return $xml; }
+    sub format_txt  { my $id = shift; ...; return $txt; }
 
-PSGI applications can be created as subclass of L<Plack::Component> or as
-simple code reference:
-
+    sub formats {
+        return {
+            json => [ 'application/json' ],
+            xml  => [ 'application/xml' ],
+            txt  => [ 'text/plain', docs => 'http://example.com' ]
+        }
+    }
 
 =head1 DESCRIPTION
 
