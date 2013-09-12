@@ -103,9 +103,9 @@ One can also implement the unAPI Server as subclass of Plack::App::unAPI:
     package MyUnAPIServer;
     use parent 'Plack::App::unAPI';
 
-    sub format_json { my $id = shift; ...; return $json; }
-    sub format_xml  { my $id = shift; ...; return $xml; }
-    sub format_txt  { my $id = shift; ...; return $txt; }
+    sub format_json { my $id = $_[1]; ...; return $json; }
+    sub format_xml  { my $id = $_[1]; ...; return $xml; }
+    sub format_txt  { my $id = $_[1]; ...; return $txt; }
 
     sub formats {
         return {
@@ -252,5 +252,7 @@ Chudnov et al. (2006): I<Introducing unAP>. In: Ariadne, 48,
 <http://www.ariadne.ac.uk/issue48/chudnov-et-al/>.
 
 =back
+
+=encoding utf8
 
 =cut
