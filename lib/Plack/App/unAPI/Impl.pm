@@ -92,8 +92,9 @@ sub formats {
     push @xml, $id eq '' ?  '<formats>'
                          : "<formats id=\"" . _xmlescape($id) . "\">";
 
-    while (my ($name, $format) = each %{$self->{formats}}) {
+    foreach my $name (sort keys %{ $self->{formats} }) {
         next if $name eq '_';
+        my $format = $self->{formats}->{$name};
         my $line = "<format name=\"$name\" type=\"".$format->{type}."\"";
         if ( $format->{docs} ) {
             push @xml, "$line docs=\"" . _xmlescape($format->{docs}) . '" />';

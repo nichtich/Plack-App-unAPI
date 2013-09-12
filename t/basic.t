@@ -74,4 +74,18 @@ is_deeply( $app->variants, [
     ], 'variants'
 );
 
+$app = sub { [200,['Content-Type'=>'text/plain'],[42]] };
+
+$app = unAPI( map { $_ => [ $app => 'text/plain' ] } reverse 'a'..'z' );
+test_psgi $app, sub {
+    my ($cb, $res) = @_;
+    $res = $cb->(GET '/');
+    my $expect = join "\n", 
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<formats>',
+        (map { "<format name=\"$_\" type=\"text/plain\" />" } 'a'..'z'),
+        '</formats>';
+    is $res->content, $expect, 'sort formats';
+};
+ 
 done_testing;
