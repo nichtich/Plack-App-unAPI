@@ -3,3 +3,4 @@ application.
 
 [![Build Status](https://travis-ci.org/nichtich/Plack-App-unAPI.png)](https://travis-ci.org/nichtich/Plack-App-unAPI)
 [![Coverage Status](https://coveralls.io/repos/nichtich/Plack-App-unAPI/badge.png?branch=master)](https://coveralls.io/r/nichtich/Plack-App-unAPI?branch=master)
+[![Kwalitee Score](http://cpants.cpanauthors.org/dist/Plack-App-unAPI.png)](http://cpants.cpanauthors.org/dist/Plack-App-unAPI)
