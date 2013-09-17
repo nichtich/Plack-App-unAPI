@@ -166,7 +166,8 @@ sub _is_psgi_response {
 }
 
 sub _xmltag {
-    my ($name, %attr) = @_;
+    my $name = shift;
+    my %attr = @_;
 
     return $name . join '', map {
         my $val = $attr{$_};
@@ -174,7 +175,8 @@ sub _xmltag {
         $val =~ s/\</\&lt\;/g;
         $val =~ s/"/\&quot\;/g;
         " $_=\"$val\"";    
-    } grep { state $n=0; not $n % 2 and defined $attr{$_} } @_;
+    } grep { defined $attr{$_} }
+      grep { state $n=0; ++$n % 2; } @_;
 }
 
 1;
