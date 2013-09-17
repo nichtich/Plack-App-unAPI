@@ -26,7 +26,8 @@ sub call {
     
     # TODO: here we could first lookup the resource at the server
     # and sent 404 if no known format was specified
-
+    # return 404 unless $self->available_formats($id);
+    
     return $self->formats_as_psgi($id)
         if $format eq '' or $format eq '_';
 
@@ -60,7 +61,7 @@ sub call {
 # can return a subset of formats for some identifiers in a subclass
 sub available_formats {
     my ($self, $id) = @_;
-    return $self->formats;
+    return keys %{$self->formats};
 }
 
 sub formats_as_psgi {
@@ -74,7 +75,7 @@ sub formats_as_psgi {
 
     push @xml, _xmltag('<formats', id => ($id eq '' ? undef : $id ) ).">";
 
-    foreach my $name (sort keys %$formats) {
+    foreach my $name (sort $self->available_formats($id)) {
         next if $name eq '_';
         push @xml, _xmltag('<format',
                 name => $name,
@@ -173,7 +174,7 @@ sub _xmltag {
         $val =~ s/\</\&lt\;/g;
         $val =~ s/"/\&quot\;/g;
         " $_=\"$val\"";    
-    } grep { defined $attr{$_} } keys %attr;
+    } grep { state $n=0; not $n % 2 and defined $attr{$_} } @_;
 }
 
 1;
