@@ -19,18 +19,21 @@ test_psgi $app, sub {
 
     use parent 'Plack::App::unAPI';
 
-    sub formats {
-        return {
-            txt  => [ 'text/plain', docs => 'http://example.com' ],
-            json => [ 'application/json' ], 
-        }
-    }
 }
 
 {
     package unAPIServerTest2;
 
     our @ISA = qw(unAPIServerTest1);
+
+    sub prepare_app {
+        my $self = shift;
+        $self->formats( {
+            txt  => [ 'text/plain', docs => 'http://example.com' ],
+            json => [ 'application/json' ], 
+        } );
+        $self->SUPER::prepare_app();
+    }
 
     sub format_json {
         return $_[1] eq 'bar' ? '{"x":1}' : undef; 
@@ -41,19 +44,20 @@ test_psgi $app, sub {
     }
 }
 
-eval {
-    $app = unAPIServerTest1->new;
-    $app->prepare_app;
-};
-ok $@, 'formats must be implemented';
+#eval {
+#    $app = unAPIServerTest1->new;
+#    $app->prepare_app;
+#};
+#ok $@, 'formats must be implemented';
 
-$app = unAPIServerTest2->new;
+$app = unAPIServerTest2->new->to_app;
 
 test_psgi $app, sub {
     my $cb = shift;
 
     my $res = $cb->(GET '/');
     is $res->code, 300, "Multiple Choices";
+
     is_deeply
         [sort grep { /^<format / } split "\n", $res->content],
         ['<format name="json" type="application/json" />', 

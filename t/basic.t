@@ -68,12 +68,6 @@ test_psgi $app, sub {
     is( $res->content, "ID: abc", "format=txt" );
 };
 
-is_deeply( $app->variants, [
-        ['txt','0.3','text/plain',undef,undef,undef,0],
-        ['xml','1','application/xml',undef,undef,undef,0],
-    ], 'variants'
-);
-
 $app = sub { [200,['Content-Type'=>'text/plain'],[42]] };
 
 $app = unAPI( map { $_ => [ $app => 'text/plain' ] } reverse 'a'..'z' );
