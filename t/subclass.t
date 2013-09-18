@@ -16,9 +16,11 @@ test_psgi $app, sub {
 
 {
     package unAPIServerTest1;
-
     use parent 'Plack::App::unAPI';
 
+    sub format_json {
+        return $_[1] eq 'bar' ? '{"x":1}' : undef; 
+    }
 }
 
 {
@@ -35,12 +37,9 @@ test_psgi $app, sub {
         $self->SUPER::prepare_app();
     }
 
-    sub format_json {
-        return $_[1] eq 'bar' ? '{"x":1}' : undef; 
-    }
-
     sub format_txt {
-        return $_[1] eq 'foo' ? "FOO" : undef;
+        my ($self, $id, $env) = @_;
+        return $id eq 'foo' ? "FOO".ref($env) : undef;
     }
 }
 
@@ -66,7 +65,7 @@ test_psgi $app, sub {
 
     $res = $cb->(GET '/?id=foo&format=txt');
     is $res->code, 200, "Ok";
-    is $res->content, "FOO", "FOO";
+    is $res->content, "FOOHASH", "FOOHASH";
  
     $res = $cb->(GET '/?id=foo&format=json');
     is $res->code, 404, "Not Found";
